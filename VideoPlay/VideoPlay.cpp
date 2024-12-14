@@ -33,6 +33,8 @@ int main()
 			printf("error found!\r\n");
 		}
 		Sleep(300);
+		int volume = libvlc_audio_get_volume(player);
+		printf("当前视频音量:%d\r\n", volume);
 		libvlc_time_t tm=libvlc_media_player_get_length(player);
 		printf("%02d:%02d:%02d\r\n", (int)tm / 3600000, (int)(tm / 60000) % 60, (int)(tm/1000) % 60);
 		int width = libvlc_video_get_width(player);
@@ -40,8 +42,17 @@ int main()
 		printf("width=%d height=%d\r\n", width, height);
 		getchar();
 		libvlc_media_player_pause(player);
+		volume = 30;
+		libvlc_audio_set_volume(player, volume);
+		printf("最大视频音量:%d\r\n", volume);
+		float position=libvlc_media_player_get_position(player);
+		printf("当前播放位置:%f\r\n", position);
+		position = 0.5;
+		libvlc_media_player_set_position(player,position);
 		getchar();
 		libvlc_media_player_play(player);
+		position = libvlc_media_player_get_position(player);
+		printf("当前播放位置:%f\r\n", position);
 		getchar();
 		libvlc_media_player_stop(player);
 	} while (0);
