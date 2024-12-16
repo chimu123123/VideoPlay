@@ -6,6 +6,7 @@ EVlc::EVlc()
 	m_instance = libvlc_new(0, NULL);
 	m_media = NULL;
 	m_player = NULL;
+	m_hwnd = NULL;
 }
 
 EVlc::~EVlc()
@@ -34,21 +35,37 @@ EVlc::~EVlc()
 
 int EVlc::SetMedia(std::string& StrUrl)
 {
-	if (m_instance == NULL)return -1;
+	if (m_instance == NULL||(m_hwnd==NULL))return -1;
+	if (m_url == StrUrl)return 0;
+	m_url = StrUrl;
+	if (m_media != NULL)
+	{
+		libvlc_media_release(m_media);
+		m_media = NULL;
+	}
 	m_media = libvlc_media_new_location(m_instance, StrUrl.c_str());
 	if (m_media == NULL)return -2;
+
+	if (m_player != NULL)
+	{
+		libvlc_media_player_release(m_player);
+		m_player = NULL;
+	}
 	m_player = libvlc_media_player_new_from_media(m_media);
 	if (m_player == NULL)return -3;
+
+	if (!m_player || !m_media || !m_instance)return -1;
+	libvlc_media_player_set_hwnd(m_player, m_hwnd);
 	return 0;
 }
 
+#ifdef WIN32
 int EVlc::SetHWnd(HWND& hWnd)
 {
-	if (!m_player||!m_media||!m_instance)return -1;
-	libvlc_media_player_set_hwnd(m_player,hWnd);
+	m_hwnd = hWnd;
 	return 0;
 }
-
+#endif
 int EVlc::Play()
 {
 	if (!m_player || !m_media || !m_instance)return -1;
@@ -97,5 +114,26 @@ VlcSize EVlc::GetMedaInfo()
 {
 	if (!m_player || !m_media || !m_instance)return VlcSize(-1,-1);
 	return VlcSize(libvlc_video_get_width(m_player), libvlc_video_get_width(m_player));
+}
+
+float EVlc::GetLenght()
+{
+	if (!m_player || !m_media || !m_instance)return -0.1;
+	libvlc_time_t tm=libvlc_media_player_get_length(m_player);
+	if (tm)
+	{
+		return tm / 1000.0f;
+	}
+	return -1.0f;
+}
+
+std::string EVlc::Unicode2Utf8(const std::wstring& str)
+{
+	std::string strinfo;
+
+	int lenght = ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), str.size(), NULL, 0, NULL, NULL);
+	strinfo.resize(lenght);
+	::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), str.size(), (LPSTR)strinfo.c_str(), strinfo.size(), NULL, NULL);
+	return strinfo;
 }
 
